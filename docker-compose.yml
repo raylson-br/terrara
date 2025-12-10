@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  terrara-app:
+    image: terrara-app:latest
+    # Como você vai buildar na VPS, usamos a imagem local.
+    # No Portainer/Swarm, é importante garantir que a imagem exista em todos os nós.
+    # Se for apenas 1 VPS (Manager), funciona buildar localmente.
+    
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=network_swarm_public"
+        
+        # Router
+        - "traefik.http.routers.terrara.rule=Host(`terrara.visualefilms.com.br`)"
+        - "traefik.http.routers.terrara.entrypoints=websecure"
+        - "traefik.http.routers.terrara.priority=1"
+        - "traefik.http.routers.terrara.tls=true"
+        - "traefik.http.routers.terrara.tls.certresolver=letsencryptresolver" # Seu resolver
+        - "traefik.http.routers.terrara.service=terrara"
+        
+        # Service
+        - "traefik.http.services.terrara.loadbalancer.server.port=3000"
+        - "traefik.http.services.terrara.loadbalancer.passHostHeader=true"
+
+    environment:
+      # Variáveis de Ambiente (Preencha no Portainer ou via .env)
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_N8N_WEBHOOK_URL=${NEXT_PUBLIC_N8N_WEBHOOK_URL}
+      - NEXT_PUBLIC_N8N_DELETE_WEBHOOK_URL=${NEXT_PUBLIC_N8N_DELETE_WEBHOOK_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+
+    networks:
+      - network_swarm_public
+
+networks:
+  network_swarm_public:
+    external: true
