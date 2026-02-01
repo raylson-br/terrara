@@ -60,7 +60,7 @@ export function Sidebar() {
 
     const links = [
         { href: "/dashboard", label: "Visão Geral", icon: Home },
-        { href: "/dashboard/chat", label: "Conversas", icon: MessageSquare }, // Reminder: This page might not exist yet based on task history, but keeping link as placeholder
+        { href: "/dashboard/leads", label: "Leads", icon: MessageSquare },
         { href: "/dashboard/agent", label: "Configurar Agente", icon: Bot },
         { href: "/dashboard/settings", label: "Configurações", icon: Settings },
     ]

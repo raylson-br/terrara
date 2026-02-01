@@ -16,6 +16,7 @@ export function ConnectWhatsapp() {
     // New state for profile info
     const [whatsappName, setWhatsappName] = useState<string | null>(null)
     const [whatsappPicture, setWhatsappPicture] = useState<string | null>(null)
+    const [isActive, setIsActive] = useState(true)
 
     // Effect to check initial status and subscribe to changes
     useEffect(() => {
@@ -30,7 +31,7 @@ export function ConnectWhatsapp() {
             // 1. Fetch initial status and profile info
             const { data: instance } = await supabase
                 .from('instances')
-                .select('status, whatsapp_name, profile_picture_url')
+                .select('status, whatsapp_name, profile_picture_url, is_active')
                 .eq('user_id', user.id)
                 .single()
 
@@ -39,6 +40,7 @@ export function ConnectWhatsapp() {
                 setQrCode(null)
                 setWhatsappName(instance.whatsapp_name)
                 setWhatsappPicture(instance.profile_picture_url)
+                setIsActive(instance.is_active ?? true)
             } else if (instance?.status === 'disconnected') {
                 setStatus('disconnected')
                 setWhatsappName(null)
@@ -67,6 +69,7 @@ export function ConnectWhatsapp() {
                             // Update profile info from payload if available
                             if (newData.whatsapp_name) setWhatsappName(newData.whatsapp_name)
                             if (newData.profile_picture_url) setWhatsappPicture(newData.profile_picture_url)
+                            if (newData.is_active !== undefined) setIsActive(newData.is_active)
                         } else if (newStatus === 'disconnected') {
                             setStatus('disconnected')
                             setQrCode(null)
@@ -240,6 +243,26 @@ export function ConnectWhatsapp() {
         }
     }
 
+    const toggleActive = async () => {
+        try {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+
+            if (!user) return
+
+            const newActiveState = !isActive
+
+            await supabase
+                .from('instances')
+                .update({ is_active: newActiveState })
+                .eq('user_id', user.id)
+
+            setIsActive(newActiveState)
+        } catch (err) {
+            console.error('Error toggling active state:', err)
+        }
+    }
+
     return (
         <Card className="border-white/10 bg-zinc-900/50">
             <CardHeader>
@@ -277,6 +300,24 @@ export function ConnectWhatsapp() {
                                 {whatsappName || "WhatsApp Conectado!"}
                             </h3>
                             <p className="text-zinc-400 text-sm">Agente pronto para uso.</p>
+                        </div>
+
+                        {/* Active Toggle */}
+                        <div className="flex items-center gap-3 px-4 py-2 bg-zinc-800/50 rounded-lg border border-white/5">
+                            <div className="flex-1 text-left">
+                                <p className="text-sm font-medium text-white">Agente Ativo</p>
+                                <p className="text-xs text-zinc-500">Responder mensagens automaticamente</p>
+                            </div>
+                            <button
+                                onClick={toggleActive}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isActive ? 'bg-emerald-500' : 'bg-zinc-600'
+                                    }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isActive ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                />
+                            </button>
                         </div>
 
                         <Button
